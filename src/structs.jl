@@ -1,8 +1,10 @@
 
 struct SmartMeter
     id::String
-    dat::Array{Float64,2}
+    dat::Array{Float32,2}
     tVec::Array{DateTime,1}
+    tRes::Second
+    nDays::Day
 end
 
 mutable struct Project_SMSPS

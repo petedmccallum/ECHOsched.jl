@@ -105,9 +105,9 @@ function LoadData(fname;pth::String="",resolution::Integer=60,from::String="",da
 
 
     ## FILL GAPS WITH NANS
-    minResSec = minimum(round.(unique(diff(t))*24*60*60))
-    ptsPerDay = 24*60*60/minResSec
-    # println("Input dat resolution: $(minResSec)sec \t($(ptsPerDay) points per day)")
+    tResSec = minimum(round.(unique(diff(t))*24*60*60))
+    ptsPerDay = 24*60*60/tResSec
+    # println("Input dat resolution: $(tResSec)sec \t($(ptsPerDay) points per day)")
     padStart = Int(round(t[1]%1*ptsPerDay))
     ind = 1 .+ padStart .+ Int.(round.(1*(t.-t[1])*ptsPerDay)/1)
     padLen = Int(ceil(ind[end]/ptsPerDay)*ptsPerDay)
@@ -145,8 +145,9 @@ function LoadData(fname;pth::String="",resolution::Integer=60,from::String="",da
 
 
     ## RESHAPE DATA TO DAILY ARRAY
-    nStep = Int((24*60*60/minResSec))
-    dataFillNans = reshape(dataFillNans, nStep, Int(length(dataFillNans)/nStep))
+    nStep = Int((24*60*60/tResSec))
+    nDays = Int(length(dataFillNans)/nStep)
+    dataFillNans = reshape(dataFillNans, nStep, nDays)
 
     ## LINEARLY INTERPOLATE GAP AT 01:00
     if UKDS_1amCorrection == true
@@ -157,7 +158,7 @@ function LoadData(fname;pth::String="",resolution::Integer=60,from::String="",da
     n = split(split(fullPath,"/")[end],".")[1]
 
     ## CREATE STUCT
-    smartMeter = SmartMeter(n, dataFillNans, tFill)
+    smartMeter = SmartMeter(n, dataFillNans, tFill, Second(tResSec), Day(nDays))
     return smartMeter
 end
 
@@ -169,6 +170,7 @@ function InitProject(;N,pth::String,query::String)
     proj.path = Dict("data"=>pth)
     proj.fullDataList = FindData(proj.path["data"]; query=query,hideList=true)
     proj.dataIndices = vcat([N]...)
+    proj.verbose = Array{DataFrame}(undef,length(proj.dataIndices))
 
     nDwlg = length(N)
     #=
