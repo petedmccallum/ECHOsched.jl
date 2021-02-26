@@ -7,8 +7,12 @@ include("structs.jl")
 include("gatherData.jl")
 # include("extractSchedules.jl")
 include("dataFixes.jl")
+include("cooling/cooling_segmentation.jl")
+
 
 
 # Write your package code here.
+
+export cooling_onoff_segmentation
 
 end
