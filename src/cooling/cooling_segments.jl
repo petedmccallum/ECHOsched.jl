@@ -8,9 +8,10 @@ Uses temperature and derivatives to determine when cooling is active. A Δt of
 function cooling_onoff_segmentation(
         time_vec,
         temperature;
-        return_trace::Bool=false,
         θ_creep_limit_1::Float64=0.,
-        θ_creep_limit_2::Float64=0.11)
+        θ_creep_limit_2::Float64=0.11,
+        return_trace::Bool=false,
+        filltrace_const=30)
 
     # Dataframe for input data
     data = DataFrame(:t=>time_vec,:θ=>temperature)
@@ -59,7 +60,7 @@ function cooling_onoff_segmentation(
 
         cooling_filltrace = scatter(
             x=data.t[vcat(range_to_filltrace_t.(cooling_ranges)...)][:],
-            y=vcat(range_to_filltrace_y.(30,1:65)...)[:],
+            y=vcat(range_to_filltrace_y.(filltrace_const,1:length(cooling_ranges))...)[:],
             mode="lines",
             line=attr(width=0),
             fill="tozeroy",
