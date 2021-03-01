@@ -8,6 +8,7 @@ include("gatherData.jl")
 # include("extractSchedules.jl")
 include("dataFixes.jl")
 include("cooling/cooling_segments.jl")
+include("cooling/Util.jl")
 
 
 

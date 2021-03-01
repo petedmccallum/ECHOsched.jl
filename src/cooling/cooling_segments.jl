@@ -72,13 +72,35 @@ function cooling_onoff_segmentation(
 end
 
 
-function ranges_from_vec(i)
-    sort!(i)
-    i_incremental = findall(diff(i).==1)
-    i_new_seq = findall(diff(i_incremental).!=1)
 
-    i_start = vcat(i[1],i[i_incremental[i_new_seq.+1]])
-    i_stop = vcat(i[i_incremental[i_new_seq].+1],i[end])
-    range_arr(start,stop) = start:stop
-    ranges = range_arr.(i_start,i_stop)
+function find_standby_segments(cooling_ranges_fill,L)
+    i = setdiff(1:L,vcat(collect.(cooling_ranges_fill)...))
+    standby_ranges_fill = ECHOsched.ranges_from_vec(i)
+    return standby_ranges_fill
+end
+
+
+
+function find_gaps(data,data_fill;gap_treshold_minutes::Int=5)
+    i_gaps = findall(diff(data.datetime).>=Minute(gap_treshold_minutes))
+    function date_range_arr(date_vec,date_vec_fill,i_gap)
+        start = findfirst(date_vec_fill.==date_vec[i_gap])  .+ 1
+        stop = findfirst(date_vec_fill.==date_vec[i_gap+1]) .- 1
+        start:stop
+    end
+    leading_gap = 1:findfirst(data_fill.datetime.==data.datetime[1])-1
+    trailing_gap = findfirst(data_fill.datetime.==data.datetime[end])+1:nrow(data_fill)
+    gap_ranges_fill = vcat(
+        [leading_gap],
+        date_range_arr.((data.datetime,),(data_fill.datetime,),i_gaps),
+        [trailing_gap]
+    )
+end
+
+
+
+function check_standby_segment(ac_power_vec,standby_range_fill;power_threshold=400)
+    standby = ac_power_vec[standby_range_fill]
+    i_nonmissing = ismissing.(standby).==false
+    sum(standby[i_nonmissing].>400) > (standby_range_fill[end]-standby_range_fill[1])/2
 end
