@@ -1,6 +1,7 @@
 module ECHOsched
 
 using DataFrames, Dates, CSV, StatsBase, Statistics, Clustering, PlotlyJS # PUBLIC
+using Interpolations
 using util # DEV
 
 include("structs.jl")

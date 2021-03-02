@@ -26,6 +26,23 @@ function filltrace(datetime_vec,ranges;colour::String="#0000ff22",yaxis="y",val=
         line=attr(width=0),
         fill="tozeroy",
         fillcolor=colour,
-        yaxis=yaxis
+        yaxis=yaxis,
+        showlegend=false,
+        hoverinfo="skip",hovertemplate=nothing
     )
+end
+
+
+
+function lin_interp(data,data_fill,col)
+    i_irreg = findall(ismissing.(data_fill[!,col]).==false)
+    y = [val for val in data_fill[!,col][i_irreg]]
+    interp_linear = LinearInterpolation(i_irreg, y)
+
+    data_fill[!,"$(col)_fill"] = deepcopy(data_fill[!,col])
+    i_map = i_irreg[1]:i_irreg[end]
+    data_fill[!,"$(col)_fill"][i_map] .= interp_linear(i_map)
+
+    data_fill[!,"$(col)_fill"][data_fill.prolonged_gap] .= missing
+    return data_fill
 end
