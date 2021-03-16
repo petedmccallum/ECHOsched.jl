@@ -8,10 +8,9 @@ Uses temperature and derivatives to determine when cooling is active. A Δt of
 function cooling_onoff_segmentation(
         time_vec,
         temperature;
+        θ_grad_onset::Float64=0.05,
         θ_creep_limit_1::Float64=0.,
-        θ_creep_limit_2::Float64=0.11,
-        return_trace::Bool=false,
-        filltrace_const=30)
+        θ_creep_limit_2::Float64=0.11)
 
     # Dataframe for input data
     data = DataFrame(:t=>time_vec,:θ=>temperature)
@@ -21,7 +20,7 @@ function cooling_onoff_segmentation(
     dy_dt = derivative(data.θ,data.t)
 
     # Find every point with a negative derivative (steeper than -0.5°C/minute)
-    i_neg_grad = findall(dy_dt.<=-0.05)
+    i_neg_grad = findall(dy_dt.<=-θ_grad_onset)
 
     # Find where this downward slope persists over more than 1 timestep
     tmp = findall(diff(i_neg_grad).>1)
@@ -31,7 +30,7 @@ function cooling_onoff_segmentation(
     function find_cooling_off(data,cooling_segment_start,i)
         t = data.t[cooling_segment_start[i]:cooling_segment_start[i+1]]
         y = data.θ[cooling_segment_start[i]:cooling_segment_start[i+1]]
-        # Find first consecutive temp rise (indended for <=0.1°C/minute rises)
+        # Find first consecutive temp rise (intended for <=0.1°C/minute rises)
         i_up = findall(derivative(y,t).>θ_creep_limit_1)
         i_up = isnothing(findfirst(diff(i_up).==1)) ? 1e9 : i_up[findfirst(diff(i_up).==1)]
         # Find first significant temp rise (i.e. >0.1°C/minute rises)
@@ -53,21 +52,6 @@ function cooling_onoff_segmentation(
     range_arr_2(start,stop) = start:stop
     cooling_ranges = range_arr_2.(vcat(j[1],j[k.+1]),vcat(j[k],nrow(data)))
 
-    # Build cooling fill traces (optional)
-    if return_trace==true
-        range_to_filltrace_t(range) = [range[1];range[1];range[end];range[end]]
-        range_to_filltrace_y(val,i) = [0,val,val,0]
-
-        cooling_filltrace = scatter(
-            x=data.t[vcat(range_to_filltrace_t.(cooling_ranges)...)][:],
-            y=vcat(range_to_filltrace_y.(filltrace_const,1:length(cooling_ranges))...)[:],
-            mode="lines",
-            line=attr(width=0),
-            fill="tozeroy",
-            fillcolor="#ff000022"
-        )
-        return cooling_ranges, cooling_filltrace
-    end
     return cooling_ranges
 end
 
@@ -102,5 +86,5 @@ end
 function check_standby_segment(ac_power_vec,standby_range_fill;power_threshold=400)
     standby = ac_power_vec[standby_range_fill]
     i_nonmissing = ismissing.(standby).==false
-    sum(standby[i_nonmissing].>400) > (standby_range_fill[end]-standby_range_fill[1])/2
+    sum(standby[i_nonmissing].>power_threshold) > (standby_range_fill[end]-standby_range_fill[1])/2
 end

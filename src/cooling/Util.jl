@@ -12,29 +12,9 @@ function ranges_from_vec(i)
     ranges = range_arr.(i_start,i_stop)
 end
 
-function filltrace(datetime_vec,ranges;colour::String="#0000ff22",yaxis="y",val=1000.)
-    range_to_filltrace_t(range) = [maximum([1,range[1]-1]);maximum([1,range[1]-1]);range[end];range[end]]
-    range_to_filltrace_y(val,i) = [0,val,val,0]
-
-    i_x = vcat(range_to_filltrace_t.(ranges)...)
-    y = vcat(range_to_filltrace_y.(val,1:length(ranges))...)
-
-    trace = scatter(
-        x=datetime_vec[i_x][:],
-        y=y[:],
-        mode="lines",
-        line=attr(width=0),
-        fill="tozeroy",
-        fillcolor=colour,
-        yaxis=yaxis,
-        showlegend=false,
-        hoverinfo="skip",hovertemplate=nothing
-    )
-end
 
 
-
-function lin_interp(data,data_fill,col)
+function lin_interp(data_fill,col)
     i_irreg = findall(ismissing.(data_fill[!,col]).==false)
     y = [val for val in data_fill[!,col][i_irreg]]
     interp_linear = LinearInterpolation(i_irreg, y)
